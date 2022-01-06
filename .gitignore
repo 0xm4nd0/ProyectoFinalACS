@@ -1,3 +1,7 @@
+clientstream
+serverstream
+cli
+
 # Prerequisites
 *.d
 
