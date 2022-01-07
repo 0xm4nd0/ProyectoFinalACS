@@ -46,6 +46,8 @@ int main(int argc, char *argv[])
   char *username = getenv("USER");
   char **arg_list;
   char *command = (char *) malloc(MAXDATASIZE);
+  int server_active = 1;
+  char server_exit[10];
 
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
   {
@@ -94,11 +96,13 @@ int main(int argc, char *argv[])
     perror("Server-sigaction() error");
     exit(1);
   }
-  else
+  else 
     printf("Server-sigaction() is OK...\n");
+  
+  printf("\nWaiting for a client connection...\n");
 
 //---------------------INICIA AQUI-----------------
-  while(1)
+  while(server_active)
   {  // main accept() loop
     sin_size = sizeof(struct sockaddr_in);
     if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size)) == -1) {
@@ -106,7 +110,7 @@ int main(int argc, char *argv[])
       continue;
     }
     else
-      printf("Server-accept() is OK...\n");
+      printf("\nServer-accept() is OK...\n");
     printf("Server-new socket, new_fd is OK...\n");
     printf("Server: Got connection from %s\n", inet_ntoa(their_addr.sin_addr));
 
@@ -114,14 +118,15 @@ int main(int argc, char *argv[])
     if (!fork()) { 
       close(sockfd); // El hijo no necesita este descriptor
 
+      //-------------SHELL STARTS HERE--------------------
       while(1) {
-        
-        //INICIO SHELL
 
         //Envío de username
         if (send(new_fd, username, strlen(username), 0) == -1)
           perror("Server-send()");
 
+        //Borrar los elementos del primer buffer recibido del servidor
+        //para evitar que se guarden datos innecesarios en próximo envío
         bzero(username, sizeof(username));
 
         // Como el cliente escribe, yo leo el comando
@@ -132,48 +137,71 @@ int main(int argc, char *argv[])
           exit(1);
         }
         else
-          printf("Recibi comando...\n");
+          printf("\nCommand received succesfully\n");
 
         user_input[numbytes] = '\0';
-        printf("Server-Received: %s\n", user_input);
 
         //Manejo de comando recibido
         command = (char *)realloc(command, strlen(user_input) * sizeof(char));
         strcpy(command, user_input);
 
         if (strcmp(command, "exit") == 0) {
+          printf("Server-Received: %s\n", command);
+          printf("Client wants to close the session\n");
           printf("Goodbye to client with fd: %d\n", new_fd);
           break;
         } 
         else {
+          printf("Server-Received: %s\n", command);
           arg_list = parse_command(command);
           exec_command(arg_list, new_fd);
         }
 
       }
 
+      
       free(arg_list);
       free(command);
-      printf("Este es el proceso padre, cierra el descriptor del socket cliente y se regresa a esperar otro cliente\n");
+      printf("\nSe cierra el descriptor del socket cliente y se regresa a esperar otro cliente\n");
       close(new_fd);  // El proceso padre no necesita este descriptor
-      printf("Server-new socket, new_fd closed successfully...\n");
-
-      /*
-      // Ahora yo capturo del teclado para responder al cliente
-      printf("Escribe un mensaje a enviar\n");
-      char linea1[LINE_MAX]; // podemos usarlo por el fgets
-      fgets(linea1,LINE_MAX,stdin);
-      printf("El mensaje a enviar es: %s", linea1);
-      if (send(new_fd, linea1, strlen(linea1), 0) == -1)
-        perror("Server-send() error lol!");
-      close(new_fd);
-      exit(0);
-      */
+      printf("Server-new socket, new_fd closed successfully...\n\n");
+      printf("Waiting for more clients to connect...\n");
+      break;
+      
     }
 
+    /*
+    printf("Do you want to keep server active? [Yes/No]: ");
+    if (fgets(server_exit, sizeof server_exit, stdin) != NULL){
+      size_t length = strlen(server_exit);
+
+        if (length > 10) {
+          printf("\nInput is too long. Try again\n");
+          continue;
+        }
+        else if (length > 0 && server_exit[length-1] == '\n') 
+          server_exit[--length] = '\0';
+
+    }
+
+    if ((strcmp(server_exit, "No") == 0) || (strcmp(server_exit, "N") == 0)) {
+      printf("Terminating server...\n");
+      printf("Goodbye!\n");
+      server_active = 0;
+      break;
+    }
+    else
+      if ((strcmp(server_exit, "Yes") == 0) || (strcmp(server_exit, "Y") == 0)) {;
+        server_active = 1;
+        printf("Waiting for more clients to connect...\n");
+        continue;
+      } 
+    */
+    
     //printf("Este es el proceso padre, cierra el descriptor del socket cliente y se regresa a esperar otro cliente\n");
     //close(new_fd);  // El proceso padre no necesita este descriptor
     //printf("Server-new socket, new_fd closed successfully...\n");
+
   } // Fin del while
 
   return 0;
@@ -205,15 +233,18 @@ void exec_command(char** arg_list, int new_fd) {
     }
     //Child execution
     else {
-      //printf("arg_list[0]: %s\n", arg_list[0]);
       //Close reading end in the child
       close(pipe_fd[0]);
       dup2(pipe_fd[1], 1); //redirect STDOUT to the writing end of the pipe
-      //dup2(pipe_fd[2], 2); //send STDERR to the writing end of the pipe
+      //dup2(pipe_fd[1], 2); //send STDERR to the writing end of the pipe
       close(pipe_fd[1]); //Descriptor no longer needed
 
         execvp(arg_list[0], arg_list);
         perror("execvp");
         exit(EXIT_FAILURE);
     }
+}
+
+void exit_server() {
+
 }

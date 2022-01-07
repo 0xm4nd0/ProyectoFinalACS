@@ -75,13 +75,13 @@ int main(int argc, char *argv[])
     exit(1);
   }
   else
-    printf("Client-The connect() is OK...\n");
+    printf("Client-The connect() is OK...\n\n");
 
-  //---------------INICIO AQUI------------------------
+  //---------------SHELL STARTS HERE----------------------
   
   // Se va a recibir el username del servidor
   if ((numbytes = recv(sockfd, server_usr, MAXDATASIZE-1, 0)) == -1) {
-    perror("recv() fail: No se recibio username");
+    perror("Server-recv() fail");
     exit(1);
   }
   else {
@@ -92,28 +92,30 @@ int main(int argc, char *argv[])
 
   }
 
-  printf("%s\n", server_usr);
-
   while(1) {
     
     //Se lee comando del usuario
     read_command(username, command);
 
-    if (strcmp(command, "exit") == 0) 
-      break;
+    if (strlen(command) < 1)
+      continue; 
       
     if (send(sockfd, command, strlen(command), 0) == -1)
-      perror("Server-send(): No se mando comando");
+      perror("Client-send() fail");
+
+    if (strcmp(command, "exit") == 0) {
+      printf("Connection terminated...\n");
+      break;
+    }
 
     //Se recibe respuesta del servidor   
     if ((numbytes = recv(sockfd, server_execution, MAXDATASIZE-1, 0)) == -1) {
-      perror("recv() fail: No se recibio respuesta de la ejecucion");
+      perror("Server-recv() fail");
       exit(1);
     }
     else {
       //Respuesta de execvp obtenida
       server_execution[numbytes] = '\0';
-
 
       //Manejo de respuesta de execvp recibida
       //result = (char *)realloc(result, strlen(server_execution) * sizeof(char));
@@ -152,6 +154,7 @@ int main(int argc, char *argv[])
   */
   
   printf("Client-Closing sockfd\n");
+  printf("Goodbye!\n");
   close(sockfd);
   return 0;
 }
