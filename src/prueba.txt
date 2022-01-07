@@ -1,1 +1,1 @@
-Este es un archivo ejemplo para la shell
+Este es un archivo de prueba para que la shell lo pueda leer con el comando cat
