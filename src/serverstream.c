@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 
 void exec_command(char** arg_list, int new_fd) {
   pid_t ch_pid;
-  int pipe_fd[2];
+  int pipe_fd[2], num_bytes;
 
   pipe(pipe_fd);
 
@@ -196,8 +196,8 @@ void exec_command(char** arg_list, int new_fd) {
       char buffer[MAX_SIZE];
       close(pipe_fd[1]); //Close the write end of the pipe in the parent
 
-      if (read(pipe_fd[0], buffer, sizeof(buffer)) != 0) {
-        
+      if ((num_bytes = read(pipe_fd[0], buffer, sizeof(buffer))) > 0) {
+        buffer[num_bytes] = '\0';
         //pass execvp response buffer to client
         if (send(new_fd, buffer, strlen(buffer), 0) == -1)
           perror("Server-send()");
