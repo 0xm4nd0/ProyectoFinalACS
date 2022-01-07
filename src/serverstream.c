@@ -193,7 +193,7 @@ void exec_command(char** arg_list, int new_fd) {
 
     //Parent execution
     if (ch_pid) {
-      char buffer[MAX_SIZE];
+      char buffer[MAXDATASIZE];
       close(pipe_fd[1]); //Close the write end of the pipe in the parent
 
       if ((num_bytes = read(pipe_fd[0], buffer, sizeof(buffer))) > 0) {
