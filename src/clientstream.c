@@ -15,7 +15,8 @@
 // max number of bytes we can get at once
 #define MAXDATASIZE 5000
 
-#define LINE_MAX 30
+//max number of bytes of command
+#define LINE_MAX 300
 
 int main(int argc, char *argv[])
 {
@@ -27,8 +28,8 @@ int main(int argc, char *argv[])
   char server_execution[MAXDATASIZE];
   
   //shell variables
-  char command[LINE_MAX]; // podemos usarlo por el fgets
-  char *username = (char *) malloc(MAXDATASIZE);
+  char *command = (char *) malloc(sizeof (char) * LINE_MAX); // podemos usarlo por el fgets
+  char *username = (char *) malloc(sizeof (char) * MAXDATASIZE);
   //char *result = (char *) malloc(MAXDATASIZE);
 
   // connector’s address information
@@ -95,7 +96,8 @@ int main(int argc, char *argv[])
   while(1) {
     
     //Se lee comando del usuario
-    read_command(username, command);
+    command = read_command(username, command);
+    printf("command entered: %s\n", command);
 
     if (strlen(command) < 1)
       continue; 
@@ -129,33 +131,12 @@ int main(int argc, char *argv[])
     }
 
   }
-
-  /*
-  printf("Escribe un mensaje a enviar\n");
-  char command[LINE_MAX]; // podemos usarlo por el fgets
-  fgets(command,LINE_MAX,stdin);
-  printf("El mensaje a enviar es: %s", command);
-  // Envia el mensaje al servidor
-  if (send(sockfd, command, strlen(command), 0) == -1)
-    perror("Server-send() error lol!");
-
-  // El cliente ya escribio, ahora va a leer la respuesta del servidor
-  if((numbytes = recv(sockfd, response, MAXDATASIZE-1, 0)) == -1)
-  {
-    perror("recv()");
-    exit(1);
-  }
-  else
-    printf("Client-The recv() is OK...\n");
-
-  response[numbytes] = '\0';
-  printf("Client-Received: %s", response);
-  
-  */
-  
+ 
   printf("Client-Closing sockfd\n");
   printf("Goodbye!\n");
   close(sockfd);
+  free(command);
+  free(username);
   return 0;
 }
 

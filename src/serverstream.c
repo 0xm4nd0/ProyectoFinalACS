@@ -115,8 +115,8 @@ int main(int argc, char *argv[])
     printf("Server: Got connection from %s\n", inet_ntoa(their_addr.sin_addr));
 
     // Este es el proceso hijo
-    if (!fork()) { 
-      close(sockfd); // El hijo no necesita este descriptor
+    //if (!fork()) { 
+    //close(sockfd); // El hijo no necesita este descriptor
 
       //-------------SHELL STARTS HERE--------------------
       while(1) {
@@ -165,42 +165,35 @@ int main(int argc, char *argv[])
       printf("\nSe cierra el descriptor del socket cliente y se regresa a esperar otro cliente\n");
       close(new_fd);  // El proceso padre no necesita este descriptor
       printf("Server-new socket, new_fd closed successfully...\n\n");
-      printf("Waiting for more clients to connect...\n");
-      break;
-      
-    }
+      //printf("Waiting for more clients to connect...\n");
+      //break;
 
-    /*
-    printf("Do you want to keep server active? [Yes/No]: ");
-    if (fgets(server_exit, sizeof server_exit, stdin) != NULL){
-      size_t length = strlen(server_exit);
+      printf("Do you want to keep server active? [Yes/No]: ");
+      if (fgets(server_exit, sizeof server_exit, stdin) != NULL){
+        size_t length = strlen(server_exit);
 
-        if (length > 10) {
-          printf("\nInput is too long. Try again\n");
+          if (length > 10) {
+            printf("\nInput is too long. Try again\n");
+            continue;
+          }
+          else if (length > 0 && server_exit[length-1] == '\n') 
+            server_exit[--length] = '\0';
+
+      }
+
+      if ((strcmp(server_exit, "No") == 0) || (strcmp(server_exit, "N") == 0)) {
+        printf("Terminating server...\n");
+        printf("Goodbye!\n");
+        server_active = 0;
+        break;
+
+      }
+      else
+        if ((strcmp(server_exit, "Yes") == 0) || (strcmp(server_exit, "Y") == 0)) {;
+          server_active = 1;
+          printf("Waiting for more clients to connect...\n");
           continue;
-        }
-        else if (length > 0 && server_exit[length-1] == '\n') 
-          server_exit[--length] = '\0';
-
-    }
-
-    if ((strcmp(server_exit, "No") == 0) || (strcmp(server_exit, "N") == 0)) {
-      printf("Terminating server...\n");
-      printf("Goodbye!\n");
-      server_active = 0;
-      break;
-    }
-    else
-      if ((strcmp(server_exit, "Yes") == 0) || (strcmp(server_exit, "Y") == 0)) {;
-        server_active = 1;
-        printf("Waiting for more clients to connect...\n");
-        continue;
-      } 
-    */
-    
-    //printf("Este es el proceso padre, cierra el descriptor del socket cliente y se regresa a esperar otro cliente\n");
-    //close(new_fd);  // El proceso padre no necesita este descriptor
-    //printf("Server-new socket, new_fd closed successfully...\n");
+        } 
 
   } // Fin del while
 
@@ -236,15 +229,11 @@ void exec_command(char** arg_list, int new_fd) {
       //Close reading end in the child
       close(pipe_fd[0]);
       dup2(pipe_fd[1], 1); //redirect STDOUT to the writing end of the pipe
-      //dup2(pipe_fd[1], 2); //send STDERR to the writing end of the pipe
+      dup2(pipe_fd[1], 2); //send STDERR to the writing end of the pipe
       close(pipe_fd[1]); //Descriptor no longer needed
 
         execvp(arg_list[0], arg_list);
         perror("execvp");
         exit(EXIT_FAILURE);
     }
-}
-
-void exit_server() {
-
 }
