@@ -8,11 +8,11 @@
 #define MAX_LENGTH_COMMAND 30
 #define MAX_SIZE 300
 
-char** parse_pipe(char* line, int pipe_check);
+//char** parse_pipe(char* line, int pipe_check);
 char** parse_command(char* line);
-void exec_command(char** arg_list, int pipe_check);
-void read_command(char* username);
-char** handle_command(char* line);
+//void exec_command(char** arg_list, int pipe_check);
+void read_command(char* username, char *line);
+//char** handle_command(char* line);
 
 /*
 int main() {
@@ -61,6 +61,7 @@ void read_command(char *username, char *line){
 	//char *username = getenv("USER");
 
 	printf("%s@proyectoACS: $ ", username);
+	fflush(stdout);
 
 	if (fgets(line, sizeof line, stdin) != NULL){
 		size_t len = strlen(line);
@@ -73,6 +74,9 @@ void read_command(char *username, char *line){
 }
 
 //PARA EL SERVER
+//Ya no se usó
+
+/*
 char** handle_command(char* line){
 	char **arg_list;
 	int pipe_check = 0;
@@ -94,7 +98,7 @@ char** handle_command(char* line){
 
 	return arg_list;
 }
-
+*/
 
 char** parse_pipe(char* line, int pipe_check){
 	char **arg_list;
@@ -240,7 +244,7 @@ void exec_command(char** arg_list, int pipe_check){
 
 			//Grandchild execution
 			if (!ch2_pid) {
-			*/
+			
 			//close(pipe_fd[1]);
 			//close(0);
 			//dup(pipe_fd[0]);

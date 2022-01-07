@@ -13,18 +13,23 @@
 // the port client will be connecting to
 #define PORT 3490
 // max number of bytes we can get at once
-#define MAXDATASIZE 300
+#define MAXDATASIZE 5000
 
 #define LINE_MAX 30
 
 int main(int argc, char *argv[])
 {
   int sockfd, numbytes;
-  char response[MAXDATASIZE];
   struct hostent *he;
 
+  //Respuesta del servidor
+  char server_usr[MAXDATASIZE];
+  char server_execution[MAXDATASIZE];
+  
   //shell variables
   char command[LINE_MAX]; // podemos usarlo por el fgets
+  char *username = (char *) malloc(MAXDATASIZE);
+  //char *result = (char *) malloc(MAXDATASIZE);
 
   // connector’s address information
   struct sockaddr_in their_addr;
@@ -73,22 +78,26 @@ int main(int argc, char *argv[])
     printf("Client-The connect() is OK...\n");
 
   //---------------INICIO AQUI------------------------
+  
+  // Se va a recibir el username del servidor
+  if ((numbytes = recv(sockfd, server_usr, MAXDATASIZE-1, 0)) == -1) {
+    perror("recv() fail: No se recibio username");
+    exit(1);
+  }
+  else {
+    //Usuario obtenido
+    server_usr[numbytes] = '\0';
+    username = (char *)realloc(username, strlen(server_usr) * sizeof(char));
+    strcpy(username, server_usr);
+
+  }
+
+  printf("%s\n", server_usr);
 
   while(1) {
-    // El cliente ya escribio, ahora va a leer la respuesta del servidor
-    if((numbytes = recv(sockfd, response, MAXDATASIZE-1, 0)) == -1)
-    {
-      perror("recv()");
-      exit(1);
-    }
-    else
-      printf("Client-The recv() is OK...\n");
     
-    //Usuario obtenido
-    response[numbytes] = '\0';
-
     //Se lee comando del usuario
-    read_command(response, command);
+    read_command(username, command);
 
     if (strcmp(command, "exit") == 0) 
       break;
@@ -96,13 +105,30 @@ int main(int argc, char *argv[])
     if (send(sockfd, command, strlen(command), 0) == -1)
       perror("Server-send(): No se mando comando");
 
+    //Se recibe respuesta del servidor   
+    if ((numbytes = recv(sockfd, server_execution, MAXDATASIZE-1, 0)) == -1) {
+      perror("recv() fail: No se recibio respuesta de la ejecucion");
+      exit(1);
+    }
+    else {
+      //Respuesta de execvp obtenida
+      server_execution[numbytes] = '\0';
 
 
+      //Manejo de respuesta de execvp recibida
+      //result = (char *)realloc(result, strlen(server_execution) * sizeof(char));
+      //strcpy(result, server_execution);
+      //printf("%s\n", result);
 
+      printf("%s\n", server_execution);
+      fflush(stdout);
+      server_execution[0] = '\0';
 
+    }
 
   }
 
+  /*
   printf("Escribe un mensaje a enviar\n");
   char command[LINE_MAX]; // podemos usarlo por el fgets
   fgets(command,LINE_MAX,stdin);
@@ -122,7 +148,8 @@ int main(int argc, char *argv[])
 
   response[numbytes] = '\0';
   printf("Client-Received: %s", response);
-
+  
+  */
   
   printf("Client-Closing sockfd\n");
   close(sockfd);
