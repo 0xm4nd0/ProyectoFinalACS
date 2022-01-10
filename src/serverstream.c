@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   int yes=1;
 
   //SHELL VARIABLES
-  char* username = malloc(strlen(getenv("USER")) * sizeof (char));
+  //char* username = malloc(strlen(getenv("USER")) * sizeof (char));
   //char *user_info;
   char **arg_list;
   char *command = (char *) malloc(MAXDATASIZE);
@@ -119,9 +119,9 @@ int main(int argc, char *argv[])
       //-------------SHELL STARTS HERE--------------------
       while(1) {
 
+        /*
         //Envío de username
         username = getenv("USER");
-        printf("Llegue al While del shell\n");
         printf("username: %s\n", username);
 
         if (send(new_fd, username, strlen(username), 0) == -1)
@@ -130,6 +130,7 @@ int main(int argc, char *argv[])
         //Se deben borrar los elementos del primer buffer enviado por el servidor
         //para evitar que se guarden datos innecesarios en próximo envío
         //memset(username, 0, sizeof username);
+        */
 
         // Como el cliente escribe, yo leo el comando
         //Número de bytes recibidos
@@ -146,22 +147,21 @@ int main(int argc, char *argv[])
         //Manejo de comando recibido
         command = (char *)realloc(command, strlen(user_input) * sizeof(char));
         strcpy(command, user_input);
+        printf("Server received the next command: %s\n", command);
 
         if (strcmp(command, "exit") == 0) {
-          printf("Server-Received: %s\n", command);
           printf("Client wants to close the session\n");
           printf("Goodbye to client with fd: %d\n", new_fd);
           break;
         } 
-        else {
-          printf("Server-Received: %s\n", command);
+        else {      
           arg_list = parse_command(command);
           exec_command(arg_list, new_fd);
         }
 
       }
 
-      printf("\nSe cierra el descriptor del socket cliente y se regresa a esperar otro cliente\n");
+      printf("\nSe cierra el descriptor del socket cliente\n");
       close(new_fd);  // El proceso padre no necesita este descriptor
       printf("Server-new socket, new_fd closed successfully...\n");
       //printf("Waiting for more clients to connect...\n");
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
       }
 
       if ((strcmp(server_exit, "No") == 0) || (strcmp(server_exit, "N") == 0)) {
-        printf("Terminating server...\n");
+        printf("\nTerminating server...\n");
         printf("Goodbye!\n");
         server_active = 0;
         break;
@@ -202,8 +202,8 @@ int main(int argc, char *argv[])
           //server_active = 1;
           printf("Waiting for more clients to connect...\n");
           //printf("user_info server-exit: %s\n", user_info);
-          printf("username server-exit: %s\n", username);
-          char* username = malloc(strlen(getenv("USER")) * sizeof (char));
+          //printf("username server-exit: %s\n", username);
+          //char* username = malloc(strlen(getenv("USER")) * sizeof (char));
         } 
       
 
@@ -234,8 +234,6 @@ void exec_command(char** arg_list, int new_fd) {
 
       if ((num_bytes = read(pipe_fd[0], exec_result, sizeof(exec_result))) > 0) {
         exec_result[num_bytes] = '\0';
-
-      printf("exec_result: %s\n", exec_result);
 
         //pass execvp response buffer to client
         if (send(new_fd, exec_result, strlen(exec_result), 0) == -1)

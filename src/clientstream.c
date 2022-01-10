@@ -16,7 +16,10 @@
 #define MAXDATASIZE 5000
 
 //max number of bytes of command
-#define LINE_MAX 300
+#define LINE_MAX 30
+
+//max number of bytes for username
+#define USRNAME_SIZE 30
 
 int main(int argc, char *argv[])
 {
@@ -29,7 +32,8 @@ int main(int argc, char *argv[])
   
   //shell variables
   char *command = (char *) malloc(sizeof (char) * LINE_MAX); // podemos usarlo por el fgets
-  char *username = (char *) malloc(sizeof (char) * MAXDATASIZE);
+  //char *username = (char *) malloc(sizeof (char) * MAXDATASIZE);
+  char* username = (char *) malloc (USRNAME_SIZE * sizeof (char));
   //char *result = (char *) malloc(MAXDATASIZE);
 
   // connector’s address information
@@ -76,12 +80,12 @@ int main(int argc, char *argv[])
     exit(1);
   }
   else
-    printf("Client-The connect() is OK...\n\n");
+    printf("Client-The connect() is OK...\n");
 
-  printf("jdaklsjdlsa\n");
 
   //---------------SHELL STARTS HERE----------------------
   
+  /*
   // Se va a recibir el username del servidor
   if ((usr_bytes = recv(sockfd, server_usr, MAXDATASIZE-1, 0)) == -1) {
     perror("Server-recv() fail");
@@ -95,7 +99,9 @@ int main(int argc, char *argv[])
 
   }
 
-  printf("Server username: %s\n\n", username);
+  */
+
+  username = client_read_username(username);
 
   while(1) {
     
@@ -109,7 +115,7 @@ int main(int argc, char *argv[])
       perror("Client-send() fail");
 
     if (strcmp(command, "exit") == 0) {
-      printf("Connection terminated...\n");
+      printf("\nConnection terminated...\n");
       break;
     }
 
