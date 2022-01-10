@@ -20,7 +20,7 @@
 
 int main(int argc, char *argv[])
 {
-  int sockfd, numbytes;
+  int sockfd, usr_bytes, exec_bytes;
   struct hostent *he;
 
   //Respuesta del servidor
@@ -78,26 +78,29 @@ int main(int argc, char *argv[])
   else
     printf("Client-The connect() is OK...\n\n");
 
+  printf("jdaklsjdlsa\n");
+
   //---------------SHELL STARTS HERE----------------------
   
   // Se va a recibir el username del servidor
-  if ((numbytes = recv(sockfd, server_usr, MAXDATASIZE-1, 0)) == -1) {
+  if ((usr_bytes = recv(sockfd, server_usr, MAXDATASIZE-1, 0)) == -1) {
     perror("Server-recv() fail");
     exit(1);
   }
   else {
     //Usuario obtenido
-    server_usr[numbytes] = '\0';
+    server_usr[usr_bytes] = '\0';
     username = (char *)realloc(username, strlen(server_usr) * sizeof(char));
     strcpy(username, server_usr);
 
   }
 
+  printf("Server username: %s\n\n", username);
+
   while(1) {
     
     //Se lee comando del usuario
     command = read_command(username, command);
-    printf("command entered: %s\n", command);
 
     if (strlen(command) < 1)
       continue; 
@@ -111,18 +114,13 @@ int main(int argc, char *argv[])
     }
 
     //Se recibe respuesta del servidor   
-    if ((numbytes = recv(sockfd, server_execution, MAXDATASIZE-1, 0)) == -1) {
+    if ((exec_bytes = recv(sockfd, server_execution, MAXDATASIZE-1, 0)) == -1) {
       perror("Server-recv() fail");
       exit(1);
     }
     else {
       //Respuesta de execvp obtenida
-      server_execution[numbytes] = '\0';
-
-      //Manejo de respuesta de execvp recibida
-      //result = (char *)realloc(result, strlen(server_execution) * sizeof(char));
-      //strcpy(result, server_execution);
-      //printf("%s\n", result);
+      server_execution[exec_bytes] = '\0';
 
       printf("%s\n", server_execution);
       fflush(stdout);

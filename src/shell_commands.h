@@ -17,16 +17,13 @@ char* read_command(char *username, char *line){
 	//char *username = getenv("USER");
 
 	printf("%s@proyectoACS: $ ", username);
-	//fflush(stdout);
 
 	if (fgets(line, MAX_SIZE, stdin) != NULL){
 		size_t len = strlen(line);
-		printf("len(line): %ld\n", len);
   		if (len > 0 && line[len-1] == '\n') 
     		line[--len] = '\0';
 	}
 
-	//printf("Read_command: %s\n ", line);
 	return line;
 
 }

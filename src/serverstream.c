@@ -20,8 +20,6 @@
 
 #define BACKLOG 100     // Cuántas conexiones pendientes se mantienen en cola
 
-//#define LINE_MAX 200
-
 #define MAXDATASIZE 5000
 
 //Shell command
@@ -43,10 +41,12 @@ int main(int argc, char *argv[])
   int yes=1;
 
   //SHELL VARIABLES
-  char *username = getenv("USER");
+  char* username = malloc(strlen(getenv("USER")) * sizeof (char));
+  //char *user_info;
   char **arg_list;
   char *command = (char *) malloc(MAXDATASIZE);
   int server_active = 1;
+  int valid_response = 0;
   char server_exit[10];
 
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -114,20 +114,22 @@ int main(int argc, char *argv[])
     printf("Server-new socket, new_fd is OK...\n");
     printf("Server: Got connection from %s\n", inet_ntoa(their_addr.sin_addr));
 
-    // Este es el proceso hijo
-    //if (!fork()) { 
-    //close(sockfd); // El hijo no necesita este descriptor
+    valid_response = 0;
 
       //-------------SHELL STARTS HERE--------------------
       while(1) {
 
         //Envío de username
+        username = getenv("USER");
+        printf("Llegue al While del shell\n");
+        printf("username: %s\n", username);
+
         if (send(new_fd, username, strlen(username), 0) == -1)
           perror("Server-send()");
 
-        //Borrar los elementos del primer buffer recibido del servidor
+        //Se deben borrar los elementos del primer buffer enviado por el servidor
         //para evitar que se guarden datos innecesarios en próximo envío
-        bzero(username, sizeof(username));
+        //memset(username, 0, sizeof username);
 
         // Como el cliente escribe, yo leo el comando
         //Número de bytes recibidos
@@ -159,25 +161,32 @@ int main(int argc, char *argv[])
 
       }
 
-      
-      free(arg_list);
-      free(command);
       printf("\nSe cierra el descriptor del socket cliente y se regresa a esperar otro cliente\n");
       close(new_fd);  // El proceso padre no necesita este descriptor
-      printf("Server-new socket, new_fd closed successfully...\n\n");
+      printf("Server-new socket, new_fd closed successfully...\n");
       //printf("Waiting for more clients to connect...\n");
       //break;
 
-      printf("Do you want to keep server active? [Yes/No]: ");
-      if (fgets(server_exit, sizeof server_exit, stdin) != NULL){
-        size_t length = strlen(server_exit);
+      while (!valid_response) {
+        printf("\nDo you want to keep the server active? [Yes/No]: ");
+        if (fgets(server_exit, sizeof server_exit, stdin) != NULL){
+          size_t length = strlen(server_exit);
 
-          if (length > 10) {
-            printf("\nInput is too long. Try again\n");
-            continue;
-          }
-          else if (length > 0 && server_exit[length-1] == '\n') 
-            server_exit[--length] = '\0';
+            if (length > strlen("Yes ")) {
+              printf("Input is too long. Try again.\n");
+              continue;
+            }
+            else if (length > 0 && server_exit[length-1] == '\n') 
+              server_exit[--length] = '\0';
+              
+            if ((strcmp(server_exit, "No") == 0) || (strcmp(server_exit, "N") == 0) || 
+                (strcmp(server_exit, "Yes") == 0) || (strcmp(server_exit, "Y") == 0)) {
+              valid_response = 1;
+            }
+              else
+                printf("Invalid answer. Try again.\n");
+            
+        }
 
       }
 
@@ -190,13 +199,19 @@ int main(int argc, char *argv[])
       }
       else
         if ((strcmp(server_exit, "Yes") == 0) || (strcmp(server_exit, "Y") == 0)) {;
-          server_active = 1;
+          //server_active = 1;
           printf("Waiting for more clients to connect...\n");
-          continue;
+          //printf("user_info server-exit: %s\n", user_info);
+          printf("username server-exit: %s\n", username);
+          char* username = malloc(strlen(getenv("USER")) * sizeof (char));
         } 
+      
 
   } // Fin del while
 
+  free(arg_list);
+  free(command);
+  close(sockfd);
   return 0;
 }
 
@@ -214,17 +229,20 @@ void exec_command(char** arg_list, int new_fd) {
 
     //Parent execution
     if (ch_pid) {
-      char buffer[MAXDATASIZE];
+      char exec_result[MAXDATASIZE];
       close(pipe_fd[1]); //Close the write end of the pipe in the parent
 
-      if ((num_bytes = read(pipe_fd[0], buffer, sizeof(buffer))) > 0) {
-        buffer[num_bytes] = '\0';
+      if ((num_bytes = read(pipe_fd[0], exec_result, sizeof(exec_result))) > 0) {
+        exec_result[num_bytes] = '\0';
+
+      printf("exec_result: %s\n", exec_result);
+
         //pass execvp response buffer to client
-        if (send(new_fd, buffer, strlen(buffer), 0) == -1)
+        if (send(new_fd, exec_result, strlen(exec_result), 0) == -1)
           perror("Server-send()");
       }
     }
-    //Child execution
+    //Child will execute the command read from the client
     else {
       //Close reading end in the child
       close(pipe_fd[0]);
