@@ -1,7 +1,7 @@
 # Proyecto Final Arquitectura Cliente-Servidor
 
-## Objetivo
-En este proyecto se encuentra una implementación de un modelo Cliente-Servidor que ejecuta comandos remotamente, como ocurre con el protocolo SSH.
+## Descripción
+En este proyecto se encuentra una implementación de un modelo Cliente-Servidor donde se ejecutan comandos (de forma remota) ingresados por el cliente, como ocurre con el protocolo SSH.
 
 ![plot](./ClientServerExample.png)
 
