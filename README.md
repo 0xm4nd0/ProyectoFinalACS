@@ -8,21 +8,21 @@ En este proyecto se encuentra una implementación de un modelo Cliente-Servidor 
 ## Ejecución
 Para ejecutarlo, de manera **local**, nos ubicamos dentro de la carpeta `src` y realizamos lo siguiente:
 
-1. Se compila el archivo `serverstream.c`
+1. Se compila el archivo `serverstream.c`.
     ```console
         gcc clientstream.c -o serverstream
     ```
-2. Se compila el archivo `clientstream.c`
+2. Se compila el archivo `clientstream.c`.
     ```console
         gcc clientstream.c -o clientstream
     ```
-3. Ejecutamos el programa `serverstream`
+3. Ejecutamos el programa `serverstream`.
     ```console
-        ./severstream
+        ./serverstream
     ```
-4. Por último, ejecutamos el programa `clientstream` con el parámetro de `localhost`
+4. Por último, ejecutamos el programa `clientstream` con los argumentos `localhost` y `3490` (que son la dirección IP y el puerto del servidor, respectivamente).
     ```console
-        ./clientstream localhost
+        ./clientstream localhost 3490
     ```
 Para finalizar la conexión del lado del cliente, ingresamos el comando `exit`.
 
