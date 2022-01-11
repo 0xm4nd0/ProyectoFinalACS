@@ -1,3 +1,20 @@
+/*
+  Alumnos: Espino Rojas Hector Daniel
+           Vargas Guerrero Armando
+
+  Grupo: 01
+
+  Objetivo: 
+    Creación de un modelo cliente-servidor que ejecuta
+    comandos remotamente, como en la implementación de 
+    SSH.
+
+  Éste es el programa correspondiente al cliente.
+
+*/
+
+//Inclusión de bibliotecas predefinidas
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,68 +27,71 @@
 
 #include "shell_commands.h"
 
-// the port client will be connecting to
-#define PORT 3490
-// max number of bytes we can get at once
-#define MAXDATASIZE 5000
+//Cantidad máxima de bytes que se envían en el socket
+#define MAXDATASIZE 11000
 
-//max number of bytes of command
+//Numéro máximo de bytes permitidos para el ingreso de comando
 #define LINE_MAX 30
 
-//max number of bytes for username
+//Número máximo de bytes permitidos para el ingreso de usuario
 #define USRNAME_SIZE 30
 
+//Función principal que inicializa al cliente
 int main(int argc, char *argv[])
 {
   int sockfd, usr_bytes, exec_bytes;
   struct hostent *he;
+  int PORT;
 
-  //Respuesta del servidor
-  char server_usr[MAXDATASIZE];
+  //En este buffer se almacena la respuesta producida por el servidor
   char server_execution[MAXDATASIZE];
   
-  //shell variables
-  char *command = (char *) malloc(sizeof (char) * LINE_MAX); // podemos usarlo por el fgets
-  //char *username = (char *) malloc(sizeof (char) * MAXDATASIZE);
+  //Apuntadores a cadena que almacenarán el nombre de usuario y el comando ingresado
+  char *command = (char *) malloc(sizeof (char) * LINE_MAX); 
   char* username = (char *) malloc (USRNAME_SIZE * sizeof (char));
-  //char *result = (char *) malloc(MAXDATASIZE);
 
-  // connector’s address information
+  // información sobre la dirección del cliente
   struct sockaddr_in their_addr;
 
-  // if no command line argument supplied
-  if(argc != 2)
+  // En el caso de que no se ingresen los parámetros necesarios en la línea de comandos
+  if(argc != 3)
   {
-    fprintf(stderr, "Client-Usage: %s hostname_del_servidor\n", argv[0]);
-    // just exit
+    fprintf(stderr, 
+      "La ejecucion del cliente es la siguiente: \n\t%s hostname_del_servidor puerto_servidor\n", argv[0]);
+    
+    // Se finaliza la ejecución del cliente
     exit(1);
-  }
+  } else 
+      PORT = atoi(argv[2]);
 
-  // get the host info
+  // Se obtiene la información del host del servidor
   if((he=gethostbyname(argv[1])) == NULL)
   {
     perror("gethostbyname()");
     exit(1);
   }
   else
-    printf("Client-The remote host is: %s\n", argv[1]);
+    printf("\nCliente -> El host remoto es: %s\n", argv[1]);
 
+  //Se crea un nuevo socket
   if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
   {
     perror("socket()");
     exit(1);
   }
   else
-    printf("Client-The socket() sockfd is OK...\n");
+    printf("Cliente-socket() -> sockfd OK...\n");
 
 
-  // host byte order
+  //Orden de bytes del host
   their_addr.sin_family = AF_INET;
-  // short, network byte order
-  printf("Server-Using %s and port %d...\n", argv[1], PORT);
+
+  //Orden de bytes para la red
+  printf("El servidor esta usando la direccion %s y el puerto %d...\n", argv[1], PORT);
   their_addr.sin_port = htons(PORT);
   their_addr.sin_addr = *((struct in_addr *)he->h_addr);
-  // zero the rest of the struct
+  
+  // // Se asigna un byte nulo en el resto de la estructura
   memset(&(their_addr.sin_zero), '\0', 8);
 
   if(connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1)
@@ -80,64 +100,56 @@ int main(int argc, char *argv[])
     exit(1);
   }
   else
-    printf("Client-The connect() is OK...\n");
+    printf("Cliente -> connect() OK...\n");
 
-
-  //---------------SHELL STARTS HERE----------------------
-  
-  /*
-  // Se va a recibir el username del servidor
-  if ((usr_bytes = recv(sockfd, server_usr, MAXDATASIZE-1, 0)) == -1) {
-    perror("Server-recv() fail");
-    exit(1);
-  }
-  else {
-    //Usuario obtenido
-    server_usr[usr_bytes] = '\0';
-    username = (char *)realloc(username, strlen(server_usr) * sizeof(char));
-    strcpy(username, server_usr);
-
-  }
-
-  */
+  //Cuando la conexión es exitosa, se le pide al cliente que ingrese un nombre de usuario
+  //(que se almacenará solamente del lado del cliente)
 
   username = client_read_username(username);
 
+  //---------------Inicio de ingreso de comandos del cliente-----------------------
   while(1) {
     
     //Se lee comando del usuario
     command = read_command(username, command);
 
+    //Se omite que el usuario haya ingresado un salto de línea
     if (strlen(command) < 1)
       continue; 
-      
+    
+    //Se detecta si el comando ingresado se envía correctamente
     if (send(sockfd, command, strlen(command), 0) == -1)
       perror("Client-send() fail");
 
+    //En caso de que se ingrese "exit", se termina la conexión del cliente
     if (strcmp(command, "exit") == 0) {
-      printf("\nConnection terminated...\n");
+      printf("\nTerminando conexion...\n");
       break;
     }
 
-    //Se recibe respuesta del servidor   
+    //Se recibe el número de bytes de la respuesta de la ejecución del servidor   
     if ((exec_bytes = recv(sockfd, server_execution, MAXDATASIZE-1, 0)) == -1) {
       perror("Server-recv() fail");
       exit(1);
     }
     else {
-      //Respuesta de execvp obtenida
+      //En el caso de que la recepción sea exitosa
+      //se lee la respuesta de la función execvp
+
+      //Se agrega un fin de cadena después del último byte recibido del servidor
       server_execution[exec_bytes] = '\0';
 
+      //Se imprimen los resultados
       printf("%s\n", server_execution);
       fflush(stdout);
-      server_execution[0] = '\0';
+      //server_execution[0] = '\0';
 
     }
 
   }
  
-  printf("Client-Closing sockfd\n");
-  printf("Goodbye!\n");
+  printf("Cliente -> Se cierra sockfd\n");
+  printf("¡Hasta luego!\n\n");
   close(sockfd);
   free(command);
   free(username);
